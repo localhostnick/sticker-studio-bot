@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  sticker-bot:
+    build: .
+    container_name: tg_sticker_manager_bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./temp:/app/temp
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+      - ./sticker_bot.db:/app/sticker_bot.db
