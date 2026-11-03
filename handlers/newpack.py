@@ -13,6 +13,8 @@ from telegram.ext import (
 )
 
 from database import AsyncSessionLocal
+from handlers.common import cancel_command
+from handlers.start import start_command
 from handlers.media_collector import handle_incoming_media
 from keyboards.main_keyboard import get_cancel_keyboard, get_main_menu_keyboard
 from keyboards.pack_keyboard import get_done_collecting_keyboard
@@ -25,7 +27,6 @@ from services.queue_service import QueueService
 from utils.logger import logger
 from utils.progress import format_progress_message
 from utils.short_name import generate_unique_short_name
-from utils.typography import small_caps
 
 WAITING_TITLE, WAITING_MEDIA = range(2)
 
@@ -37,8 +38,8 @@ async def newpack_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     context.user_data["session_id"] = uuid.uuid4().hex[:8]
 
     msg = (
-        f"📦 <b>{small_caps('Create New Sticker Pack')}</b>\n\n"
-        f"<i>{small_caps('Please enter a Title for your new sticker pack')} (e.g. My Cool Memes):</i>"
+        "📦 <b>Create New Sticker Pack</b>\n\n"
+        "<i>Please enter a title for your new sticker pack (e.g. My Cool Memes):</i>"
     )
 
     if update.callback_query:
@@ -55,7 +56,7 @@ async def receive_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     title = update.message.text.strip()
     if not title or len(title) > 64:
         await update.message.reply_text(
-            f"⚠️ <i>{small_caps('Title must be between 1 and 64 characters long. Try again')}:</i>",
+            "⚠️ <i>Title must be between 1 and 64 characters long. Please try again:</i>",
             reply_markup=get_cancel_keyboard()
         )
         return WAITING_TITLE
@@ -65,11 +66,11 @@ async def receive_title(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     context.user_data["short_name"] = generate_unique_short_name(title, bot_user.username)
 
     msg = (
-        f"✅ <b>{small_caps('Pack Title Set')}:</b> <code>{title}</code>\n\n"
-        f"<i>{small_caps('Now send your sticker images')}:</i>\n"
-        f"• {small_caps('Upload a single ZIP archive')}\n"
-        f"• {small_caps('Or send multiple photos/documents at once')}\n\n"
-        f"<i>{small_caps('Click Create Pack below when upload is complete')}.</i>"
+        f"✅ <b>Pack Title Set:</b> <code>{title}</code>\n\n"
+        "<i>Now send your sticker images:</i>\n"
+        "• Upload a single ZIP archive\n"
+        "• Or send multiple photos/documents at once\n\n"
+        "<i>Click 'Create Pack' below when your upload is complete.</i>"
     )
     await update.message.reply_text(msg, parse_mode="HTML", reply_markup=get_done_collecting_keyboard(0))
     return WAITING_MEDIA
@@ -98,7 +99,7 @@ async def finish_pack_creation(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if not collected_files:
         await query.edit_message_text(
-            f"⚠️ <i>{small_caps('No files were received! Please upload images or a ZIP file.')}</i>",
+            "⚠️ <i>No files were received! Please upload images or a ZIP file.</i>",
             reply_markup=get_cancel_keyboard()
         )
         return WAITING_MEDIA
@@ -190,17 +191,17 @@ async def finish_pack_creation(update: Update, context: ContextTypes.DEFAULT_TYP
                 details=f"Created pack '{title}' with {total} stickers."
             )
 
-        links_text = "\n".join([f"• <a href='{p['link']}'>{p['title']}</a> ({p['count']} {small_caps('stickers')})" for p in packs_info])
+        links_text = "\n".join([f"• <a href='{p['link']}'>{p['title']}</a> ({p['count']} stickers)" for p in packs_info])
         final_text = (
-            f"🎉 <b>{small_caps('Sticker Pack Created Successfully')}!</b>\n\n"
-            f"<b>{small_caps('Generated Pack(s)')}:</b>\n{links_text}\n\n"
-            f"✨ <i>{small_caps('Total Stickers Uploaded')}: {total}</i>"
+            "🎉 <b>Sticker Pack Created Successfully!</b>\n\n"
+            f"<b>Generated Pack(s):</b>\n{links_text}\n\n"
+            f"✨ <i>Total Stickers Uploaded: {total}</i>"
         )
         await status_msg.edit_text(final_text, parse_mode="HTML", reply_markup=get_main_menu_keyboard(), disable_web_page_preview=False)
 
     except Exception as e:
         logger.error(f"Error during pack creation: {e}")
-        await status_msg.edit_text(f"❌ <b>{small_caps('Creation Failed')}:</b> {str(e)}", parse_mode="HTML", reply_markup=get_main_menu_keyboard())
+        await status_msg.edit_text(f"❌ <b>Creation Failed:</b> {str(e)}", parse_mode="HTML", reply_markup=get_main_menu_keyboard())
     finally:
         await QueueService.finish_task(user.id)
         if collected_files:
@@ -225,8 +226,8 @@ def get_newpack_handler() -> ConversationHandler:
             ],
         },
         fallbacks=[
-            CommandHandler("cancel", newpack_start),
-            CallbackQueryHandler(newpack_start, pattern="^action_cancel$"),
-            CallbackQueryHandler(newpack_start, pattern="^cmd_start$"),
+            CommandHandler("cancel", cancel_command),
+            CallbackQueryHandler(cancel_command, pattern="^action_cancel$"),
+            CallbackQueryHandler(start_command, pattern="^cmd_start$"),
         ],
     )

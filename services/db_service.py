@@ -103,6 +103,17 @@ class DatabaseService:
         await session.commit()
 
     @staticmethod
+    async def update_pack_title(session: AsyncSession, short_name: str, new_title: str) -> bool:
+        """Update the title of a sticker pack in DB."""
+        result = await session.execute(
+            update(StickerPack)
+            .where(StickerPack.short_name == short_name)
+            .values(title=new_title, updated_at=datetime.now(timezone.utc))
+        )
+        await session.commit()
+        return result.rowcount > 0
+
+    @staticmethod
     async def delete_pack(session: AsyncSession, short_name: str, owner_id: int) -> bool:
         """Delete pack record from DB if owned by owner_id."""
         result = await session.execute(

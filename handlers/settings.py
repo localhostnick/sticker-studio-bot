@@ -1,25 +1,24 @@
 from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
+from telegram.ext import ContextTypes, CommandHandler
 
 from config import settings
 from keyboards.main_keyboard import get_main_menu_keyboard
 from middlewares.user_tracker import track_user
-from utils.typography import small_caps
 
 
 @track_user
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handles /settings command with Small Caps font."""
+    """Handles /settings command."""
     db_type = settings.DATABASE_URL.split(":")[0]
 
     text = (
-        f"⚙️ <b>{small_caps('Bot System Configuration')}</b>\n\n"
-        f"• <b>{small_caps('Max Upload Batch')}:</b> {settings.MAX_IMAGES} {small_caps('items')}\n"
-        f"• <b>{small_caps('Max Upload Size')}:</b> {settings.MAX_UPLOAD_SIZE // (1024*1024)} MB\n"
-        f"• <b>{small_caps('Database Backend')}:</b> {db_type.upper()}\n"
-        f"• <b>{small_caps('Logging Level')}:</b> {settings.LOG_LEVEL}\n"
-        f"• <b>{small_caps('Temp Directory')}:</b> <code>{settings.TEMP_DIRECTORY}</code>\n\n"
-        f"<i>{small_caps('Configuration parameters can be tuned in .env file')}</i>"
+        "⚙️ <b>Bot System Configuration</b>\n\n"
+        f"• <b>Max Upload Batch:</b> {settings.MAX_IMAGES} items\n"
+        f"• <b>Max Upload Size:</b> {settings.MAX_UPLOAD_SIZE // (1024*1024)} MB\n"
+        f"• <b>Database Backend:</b> {db_type.upper()}\n"
+        f"• <b>Logging Level:</b> {settings.LOG_LEVEL}\n"
+        f"• <b>Temp Directory:</b> <code>{settings.TEMP_DIRECTORY}</code>\n\n"
+        "<i>Configuration parameters can be tuned in your .env file.</i>"
     )
 
     if update.callback_query:

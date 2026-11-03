@@ -9,6 +9,7 @@ from telegram import Bot, StickerSet
 from services.telegram_service import TelegramService
 from services.image_service import ImageService
 from utils.logger import logger
+from utils.rate_limiter import retry_telegram_api
 
 
 class PackDownloader:
@@ -20,8 +21,16 @@ class PackDownloader:
         dest_dir: Path,
         export_format: str = "PNG",  # PNG, WEBP, or BOTH
         progress_callback: Optional[Callable[[int, int], None]] = None
-    ) -> Tuple[List[Path], str]:
-        """Downloads all stickers from a pack and converts them to specified format."""
+    ) -> Tuple[List[Path], str, List[str], str]:
+        """Downloads all stickers from a pack and converts them to specified format.
+        
+        Returns:
+            Tuple containing:
+            - List of downloaded file paths
+            - Pack title
+            - List of emojis corresponding to each sticker
+            - Detected format ('static', 'video', or 'animated')
+        """
         # Extract short_name if URL given
         short_name = pack_name_or_link.split("/")[-1].strip()
         
@@ -31,19 +40,34 @@ class PackDownloader:
 
         dest_dir.mkdir(parents=True, exist_ok=True)
         downloaded_paths: List[Path] = []
+        emojis: List[str] = []
         total = len(sticker_set.stickers)
+
+        # Detect pack format
+        first_stk = sticker_set.stickers[0] if sticker_set.stickers else None
+        if first_stk and getattr(first_stk, "is_video", False):
+            detected_format = "video"
+        elif first_stk and getattr(first_stk, "is_animated", False):
+            detected_format = "animated"
+        else:
+            detected_format = "static"
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             for idx, sticker in enumerate(sticker_set.stickers, start=1):
-                # Fetch Telegram File info
-                tg_file = await bot.get_file(sticker.file_id)
-                file_url = tg_file.file_path
+                # Fetch Telegram File info with retry
+                tg_file = await retry_telegram_api(bot.get_file, sticker.file_id)
+                try:
+                    raw_bytes = bytes(await tg_file.download_as_bytearray())
+                except Exception:
+                    # Fallback to direct download if needed
+                    if tg_file.file_path:
+                        response = await client.get(tg_file.file_path)
+                        response.raise_for_status()
+                        raw_bytes = response.content
+                    else:
+                        raise
 
-                # Download file bytes
-                response = await client.get(file_url)
-                response.raise_for_status()
-
-                raw_bytes = response.content
+                emojis.append(sticker.emoji or "😀")
                 out_ext = "png" if export_format.upper() == "PNG" else "webp"
                 out_file = dest_dir / f"sticker_{idx:03d}.{out_ext}"
 
@@ -64,9 +88,12 @@ class PackDownloader:
                     downloaded_paths.append(out_file)
 
                 if progress_callback:
-                    await progress_callback(idx, total)
+                    if asyncio.iscoroutinefunction(progress_callback):
+                        await progress_callback(idx, total)
+                    else:
+                        progress_callback(idx, total)
 
-        return downloaded_paths, sticker_set.title
+        return downloaded_paths, sticker_set.title, emojis, detected_format
 
     @classmethod
     async def create_zip_archive(

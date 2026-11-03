@@ -53,6 +53,9 @@ class ZipService:
 
                 # Zip Slip Protection: Ensure target file is inside extract_to_dir
                 target_path = (extract_to_dir / filename).resolve()
+                if target_path.exists():
+                    target_path = (extract_to_dir / f"{index:04d}_{filename}").resolve()
+
                 if not str(target_path).startswith(str(extract_to_dir.resolve())):
                     logger.warning(f"Security Alert: Zip Slip attempt detected in member {member.filename}")
                     continue

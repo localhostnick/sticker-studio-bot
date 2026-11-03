@@ -16,12 +16,15 @@ class ImageService:
         input_source: Union[str, Path, bytes, Image.Image],
         output_path: Union[str, Path],
         target_format: str = "WEBP",
-        exact_canvas_512: bool = True
+        exact_canvas_512: bool = True,
+        add_outline: bool = False,
+        outline_width: int = 6
     ) -> Path:
         """Processes an image for Telegram sticker compatibility.
         
         - Preserves aspect ratio
         - Resizes so max dimension is 512
+        - Optional Telegram-style white outline border
         - Centers on 512x512 transparent canvas if exact_canvas_512 is True
         - Saves as target_format (WEBP or PNG) with high quality
         """
@@ -35,7 +38,9 @@ class ImageService:
             input_source, 
             output_path, 
             target_format, 
-            exact_canvas_512
+            exact_canvas_512,
+            add_outline,
+            outline_width
         )
         return output_path
 
@@ -45,7 +50,9 @@ class ImageService:
         input_source: Union[str, Path, bytes, Image.Image],
         output_path: Path,
         target_format: str,
-        exact_canvas_512: bool
+        exact_canvas_512: bool,
+        add_outline: bool = False,
+        outline_width: int = 6
     ) -> None:
         if isinstance(input_source, (str, Path)):
             img = Image.open(input_source)
@@ -76,6 +83,16 @@ class ImageService:
             new_w = max(1, int(round(width * (cls.TARGET_SIZE / height))))
 
         img_resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+        if add_outline:
+            from PIL import ImageFilter
+            alpha = img_resized.split()[3]
+            filter_size = max(3, outline_width * 2 + 1)
+            dilated = alpha.filter(ImageFilter.MaxFilter(filter_size))
+            outline = Image.new("RGBA", img_resized.size, (255, 255, 255, 255))
+            outline.putalpha(dilated)
+            outline.paste(img_resized, (0, 0), mask=img_resized)
+            img_resized = outline
 
         if exact_canvas_512:
             # Create a 512x512 transparent canvas and paste centered

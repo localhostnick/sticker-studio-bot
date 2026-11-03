@@ -1,8 +1,5 @@
-from utils.typography import small_caps
-
-
 def make_progress_bar(current: int, total: int, length: int = 10) -> str:
-    """Generates a visual unicode progress bar.
+    """Generates a visual progress bar.
     
     Example:
     current=4, total=10 => "████░░░░░░ 40%"
@@ -18,12 +15,9 @@ def make_progress_bar(current: int, total: int, length: int = 10) -> str:
 
 
 def format_progress_message(action: str, current: int, total: int, details: str = "") -> str:
-    """Formats a full progress report string for Telegram edit_message_text with Small Caps headers."""
+    """Formats a progress report string for Telegram edit_message_text."""
     bar = make_progress_bar(current, total)
-    sc_action = small_caps(action)
-    sc_progress = small_caps("Progress")
-    
-    msg = f"⏳ <b>{sc_action}</b>\n\n{bar}\n\n<b>{sc_progress}:</b> {current} / {total}"
+    msg = f"⏳ <b>{action}</b>\n\n{bar}\n\n<b>Progress:</b> {current} / {total}"
     if details:
         msg += f"\n<i>{details}</i>"
     return msg

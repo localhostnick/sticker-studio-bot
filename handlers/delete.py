@@ -7,6 +7,8 @@ from telegram.ext import (
 )
 
 from database import AsyncSessionLocal
+from handlers.common import cancel_command
+from handlers.start import start_command
 from keyboards.main_keyboard import get_main_menu_keyboard
 from keyboards.pack_keyboard import get_packs_list_keyboard, get_delete_confirm_keyboard
 from middlewares.user_tracker import track_user
@@ -111,8 +113,8 @@ def get_delete_handler() -> ConversationHandler:
             ],
         },
         fallbacks=[
-            CommandHandler("cancel", delete_start),
-            CallbackQueryHandler(delete_start, pattern="^action_cancel$"),
-            CallbackQueryHandler(delete_start, pattern="^cmd_start$"),
+            CommandHandler("cancel", cancel_command),
+            CallbackQueryHandler(cancel_command, pattern="^action_cancel$"),
+            CallbackQueryHandler(start_command, pattern="^cmd_start$"),
         ],
     )

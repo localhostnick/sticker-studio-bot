@@ -13,6 +13,8 @@ from telegram.ext import (
 )
 
 from database import AsyncSessionLocal
+from handlers.common import cancel_command
+from handlers.start import start_command
 from handlers.media_collector import handle_incoming_media
 from keyboards.main_keyboard import get_cancel_keyboard, get_main_menu_keyboard
 from keyboards.pack_keyboard import get_packs_list_keyboard, get_done_collecting_keyboard
@@ -210,8 +212,8 @@ def get_add_handler() -> ConversationHandler:
             ],
         },
         fallbacks=[
-            CommandHandler("cancel", add_start),
-            CallbackQueryHandler(add_start, pattern="^action_cancel$"),
-            CallbackQueryHandler(add_start, pattern="^cmd_start$"),
+            CommandHandler("cancel", cancel_command),
+            CallbackQueryHandler(cancel_command, pattern="^action_cancel$"),
+            CallbackQueryHandler(start_command, pattern="^cmd_start$"),
         ],
     )

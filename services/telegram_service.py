@@ -149,6 +149,17 @@ class TelegramService:
             return None
 
     @staticmethod
+    async def set_sticker_set_title(bot: Bot, name: str, title: str) -> bool:
+        """Updates the title of an existing sticker pack via Bot API."""
+        try:
+            await retry_telegram_api(bot.set_sticker_set_title, name=name, title=title)
+            logger.info(f"Successfully updated sticker set title for '{name}' to '{title}'")
+            return True
+        except TelegramError as e:
+            logger.error(f"Failed to update title for '{name}': {e}")
+            return False
+
+    @staticmethod
     async def delete_sticker_pack(bot: Bot, short_name: str) -> bool:
         """Deletes a sticker set created by the bot."""
         try:

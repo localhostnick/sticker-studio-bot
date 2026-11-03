@@ -8,8 +8,8 @@ Thank you for your interest in contributing to the **Telegram Sticker Pack Manag
 
 ### 1. Fork & Clone the Repository
 ```bash
-git clone https://github.com/your-username/TG-STICKER-MANAGER.git
-cd TG-STICKER-MANAGER
+git clone https://github.com/localhostnick/sticker-studio-bot.git
+cd sticker-studio-bot
 ```
 
 ### 2. Set Up Virtual Environment
